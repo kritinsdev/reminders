@@ -1,0 +1,23 @@
+{
+    "2023": {
+      "4": {
+        "1": [
+          {"title": "April Fools' Day", "description": "Prank day"}
+        ],
+        "28": [
+          {"title": "Payment", "description": "100$"}
+        ]
+      },
+      "5": {
+        "3": [
+          {"title": "Payment reminder", "description": "Test event"}
+        ]
+      },
+      "8": {
+        "3": [
+          {"title": "Payment reminder SMS", "description": "Test event"}
+        ]
+      }
+    }
+  }
+  
