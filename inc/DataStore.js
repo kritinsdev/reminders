@@ -1,26 +1,28 @@
 export class DataStore {
     constructor() {
-        this.data = {};
+        this.data = this.fetchData();
     }
 
-    fetchData(callback) {
+    fetchData() {
         const storedData = localStorage.getItem('calendarData');
-        this.data = JSON.parse(storedData);
-        callback();
+        return JSON.parse(storedData);
     }
 
-    saveData() {
-        localStorage.setItem('calendarData', JSON.stringify(this.data));
+    saveData(data) {
+        localStorage.setItem('calendarData', JSON.stringify(data));
     }
 
-    getTodaysEvents() {
-        const todaysData = this.data?.[this.year]?.[this.month]?.[this.today.getDate()];
+    getTodaysEvents(today) {
+        const year = today.getFullYear();
+        const month = today.getMonth() + 1;
+        const date = today.getDate();
+        const todaysData = this.data?.[year]?.[month]?.[date];
         return todaysData ? todaysData : [];
     }
 
-    getUpcomingEvents(eventCount) {
+    getUpcomingEvents(eventCount, year, month, today) {
         const upcomingEvents = [];
-        const currentDate = new Date(this.year, this.month - 1, this.today.getDate());
+        const currentDate = new Date(year, month - 1, today.getDate());
     
         for (let i = 1; i <= eventCount; i++) {
           const nextDate = new Date(currentDate);

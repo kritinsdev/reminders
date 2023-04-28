@@ -6,10 +6,10 @@ export class Calendar {
     this.container = document.getElementById(containerId);
     this.prevMonthBtn = document.getElementById('prev-month-btn');
     this.nextMonthBtn = document.getElementById('next-month-btn');
+    this.data = this.dataStore.fetchData();
     this.today = new Date();
     this.year = this.today.getUTCFullYear();
     this.month = this.today.getUTCMonth() + 1;
-    this.data = JSON.parse(localStorage.getItem('calendarData'));
     this.upcomingEventCount = 5;
 
     this.events();
@@ -55,11 +55,11 @@ export class Calendar {
             </div>
             <div class="events">
               <div class="events-title">Today's reminders</div>
-              ${this.getTodaysEvents()}
+              ${this.todaysEventsHtml()}
             </div>
             <div class="events upcoming">
               <div class="events-title">Upcoming events</div>
-              ${this.getUpcomingEvents()}
+              ${this.upcomingEventsHtml()}
             </div>
             <div class="create-event" id="add-new-event">
             Create new <i class="fi fi-sr-add"></i>
@@ -68,7 +68,7 @@ export class Calendar {
           <div class="calendar-body">
             <div class="months">
                 <span id="prev-month-btn"><i class="fi fi-sr-caret-left"></i></span>
-                <span>${monthsOfYear[this.month - 1]}</span>
+                <span>${monthsOfYear[this.month - 1]} ${this.year}</span>
                 <span id="next-month-btn"><i class="fi fi-sr-caret-right"></i></span>
             </div>
             <div class="weekdays">
@@ -95,8 +95,8 @@ export class Calendar {
       ` : '';
 
       calendarHtml += `
-        <div class="day${dayData ? ' has-data' : ''}">
-          <div class="date ${isTodayClass}">${day}</div>
+        <div class="day${dayData ? ' has-data' : ''} ${isTodayClass}">
+          <div class="date">${day}</div>
           ${tooltipHtml}
         </div>
       `;
@@ -117,23 +117,26 @@ export class Calendar {
     form.setAttribute('id', 'eventForm');
 
     form.innerHTML = `
-      <label>Date: <input type="date" name="eventDate" required></label>
-      <label>Type:
+      <label>Date <input type="date" name="eventDate" required></label>
+      <label>Type
         <select name="eventType" required>
           <option value="">Select event type</option>
           <option value="payment">Payment</option>
           <option value="celebration">Celebration</option>
           <option value="reminder">Reminder</option>
-          <option value="todo">To-Do</option>
         </select>
       </label>
       <div class="form-options">
-        <label class="title">Title: <input type="text" name="eventTitle" required></label>
-        <label class="description">Description: <textarea name="eventDescription"></textarea></label>
-        <label class="payment">Payment Sum: <input type="number" name="eventValue" step="0.01"></label>
-        <label class="paymentTo">Payment to who: <input type="text" name="eventPaymentTo"></label>
-        <label class="time">Time: <input type="time" name="eventTime"></label>
-        <label class="repeat">Repeat: <input type="time" name="eventTime"></label>
+        <label class="title">Title <input type="text" name="eventTitle" required></label>
+        <label class="description">Description <textarea name="eventDescription"></textarea></label>
+        <label class="repeat">Repeat 
+          <select name="eventType" required>
+            <option value="">Select option</option>
+            <option value="next-month">Next month</option>
+            <option value="every-month">Every month</option>
+            <option value="every-month">Every year</option>
+          </select>
+        </label>
       </div>
       <button type="submit">Add event</button>
     `;
@@ -147,24 +150,13 @@ export class Calendar {
     const eventType = formData.get('eventType');
     const eventTitle = formData.get('eventTitle');
     const eventDescription = formData.get('eventDescription') || null;
-    const eventValue = formData.get('eventValue') || null;
-    const eventPaymentTo = formData.get('eventPaymentTo') || null;
-    const eventTime = formData.get('eventTime') || null;
   
     const eventDateObj = new Date(eventDate);
     const eventYear = eventDateObj.getUTCFullYear();
     const eventMonth = eventDateObj.getUTCMonth() + 1;
     const eventDay = eventDateObj.getUTCDate();
   
-    const newEvent = {
-      date: eventDate,
-      type: eventType,
-      title: eventTitle,
-      description: eventDescription,
-      value: eventValue,
-      paymentTo: eventPaymentTo,
-      time: eventTime,
-    };
+    const event = new Event(eventDate, eventType, eventTitle, eventDescription);
 
     if (!this.data) {
       this.data = {};
@@ -182,46 +174,26 @@ export class Calendar {
       this.data[eventYear][eventMonth][eventDay] = [];
     }
   
-    this.data[eventYear][eventMonth][eventDay].push(newEvent);
+    this.data[eventYear][eventMonth][eventDay].push(event);
   
-    localStorage.setItem('calendarData', JSON.stringify(this.data));
+    this.dataStore.saveData(this.data);
   
     this.generateCalendar();
     document.querySelector('.modal').remove();
     document.body.classList.remove('modal-open');
   }
 
-  getTodaysEvents() {
-    const todaysData = this.dataStore.getTodaysEvents();
-
-    const todaysEvents = todaysData ? todaysData.map(event => `<div class="event"><span>${event.title}</span></div>`).join('') : '<div class="event"><span>No events today</span></div>';
+  todaysEventsHtml() {
+    const todaysData = this.dataStore.getTodaysEvents(this.today);
+    
+    const todaysEvents = (todaysData.length > 0) ? todaysData.map(event => `<div class="event"><span>${event.title}</span></div>`).join('') : '<span class="info">No events for today</span>';
     return todaysEvents;
   }
 
-  getUpcomingEvents() {
-    const upcomingEvents = [];
-    const currentDate = new Date(this.year, this.month - 1, this.today.getDate());
-
-    for (let i = 1; i <= this.upcomingEventCount; i++) {
-      const nextDate = new Date(currentDate);
-      nextDate.setDate(currentDate.getDate() + i);
-      const nextYear = nextDate.getFullYear();
-      const nextMonth = nextDate.getMonth() + 1;
-      const nextDay = nextDate.getDate();
-
-      const eventData = this.data?.[nextYear]?.[nextMonth]?.[nextDay];
-
-      if (eventData) {
-        eventData.forEach(event => {
-          upcomingEvents.push({
-            date: `${nextDay}/${nextMonth}`,
-            title: event.title
-          });
-        });
-      }
-    }
-
-    const upcomingEventsHtml = upcomingEvents.map(event => `<div class="event"><span>${event.date}: ${event.title}</span></div>`).join('');
+  upcomingEventsHtml() {
+    const upcomingEvents = this.dataStore.getUpcomingEvents(this.upcomingEventCount, this.year, this.month, this.today);
+    
+    const upcomingEventsHtml = (upcomingEvents.length > 0) ? upcomingEvents.map(event => `<div class="event"><span>${event.date}: ${event.title}</span></div>`).join('') : '<span class="info">No events added</span>';
     return upcomingEventsHtml;
   }
 
