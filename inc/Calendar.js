@@ -6,7 +6,6 @@ export class Calendar {
     this.container = document.getElementById(containerId);
     this.prevMonthBtn = document.getElementById('prev-month-btn');
     this.nextMonthBtn = document.getElementById('next-month-btn');
-    this.data = this.dataStore.fetchData();
     this.today = new Date();
     this.year = this.today.getUTCFullYear();
     this.month = this.today.getUTCMonth() + 1;
@@ -44,7 +43,7 @@ export class Calendar {
     const monthsOfYear = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     const firstDay = new Date(Date.UTC(this.year, this.month - 1, 1)).getUTCDay();
     const numDays = this.daysInMonth(this.year, this.month);
-    const monthData = this.data && this.data[this.year] && this.data[this.year][this.month] ? this.data[this.year][this.month] : null;
+    const monthData = this.dataStore && this.dataStore[this.year] && this.dataStore[this.year][this.month] ? this.dataStore[this.year][this.month] : null;
 
     let calendarHtml = `
         <div class="calendar-wrap">
@@ -55,11 +54,15 @@ export class Calendar {
             </div>
             <div class="events">
               <div class="events-title">Today's reminders</div>
-              ${this.todaysEventsHtml()}
+              <div class="events-wrap">
+                ${this.todaysEventsHtml()}
+              </div>
             </div>
-            <div class="events upcoming">
+            <div class="events">
               <div class="events-title">Upcoming events</div>
-              ${this.upcomingEventsHtml()}
+              <div class="events-wrap">
+                ${this.upcomingEventsHtml()}
+              </div>
             </div>
             <div class="create-event" id="add-new-event">
             Create new <i class="fi fi-sr-add"></i>
@@ -96,7 +99,14 @@ export class Calendar {
 
       calendarHtml += `
         <div class="day${dayData ? ' has-data' : ''} ${isTodayClass}">
-          <div class="date">${day}</div>
+          <div class="date">
+            ${day}
+            <div class="dots">
+            ${dayData && dayData.length > 0 ? dayData.map(item => `
+            <div data-type="${item.type}"></div>
+          `).join('') : ''}
+          </div>
+          </div>
           ${tooltipHtml}
         </div>
       `;
@@ -130,11 +140,11 @@ export class Calendar {
         <label class="title">Title <input type="text" name="eventTitle" required></label>
         <label class="description">Description <textarea name="eventDescription"></textarea></label>
         <label class="repeat">Repeat 
-          <select name="eventType" required>
+          <select name="eventRepeat" required>
             <option value="">Select option</option>
-            <option value="next-month">Next month</option>
+            <option value="no-repeat">No repeat</option>
             <option value="every-month">Every month</option>
-            <option value="every-month">Every year</option>
+            <option value="every-year">Every year</option>
           </select>
         </label>
       </div>
@@ -146,37 +156,14 @@ export class Calendar {
 
   handleFormSubmit(form) {
     const formData = new FormData(form);
-    const eventDate = formData.get('eventDate');
+    const eventDateObject = new Date(formData.get('eventDate'));
     const eventType = formData.get('eventType');
     const eventTitle = formData.get('eventTitle');
     const eventDescription = formData.get('eventDescription') || null;
+    const eventRepeat = formData.get('eventRepeat');
   
-    const eventDateObj = new Date(eventDate);
-    const eventYear = eventDateObj.getUTCFullYear();
-    const eventMonth = eventDateObj.getUTCMonth() + 1;
-    const eventDay = eventDateObj.getUTCDate();
-  
-    const event = new Event(eventDate, eventType, eventTitle, eventDescription);
-
-    if (!this.data) {
-      this.data = {};
-    }
-  
-    if (!this.data[eventYear]) {
-      this.data[eventYear] = {};
-    }
-  
-    if (!this.data[eventYear][eventMonth]) {
-      this.data[eventYear][eventMonth] = {};
-    }
-  
-    if (!this.data[eventYear][eventMonth][eventDay]) {
-      this.data[eventYear][eventMonth][eventDay] = [];
-    }
-  
-    this.data[eventYear][eventMonth][eventDay].push(event);
-  
-    this.dataStore.saveData(this.data);
+    const event = new Event(eventDateObject, eventType, eventTitle, eventDescription, eventRepeat);
+    this.dataStore.addEvent(event);
   
     this.generateCalendar();
     document.querySelector('.modal').remove();
@@ -186,14 +173,16 @@ export class Calendar {
   todaysEventsHtml() {
     const todaysData = this.dataStore.getTodaysEvents(this.today);
     
-    const todaysEvents = (todaysData.length > 0) ? todaysData.map(event => `<div class="event"><span>${event.title}</span></div>`).join('') : '<span class="info">No events for today</span>';
+    const todaysEvents = (todaysData.length > 0) ? todaysData.map(event => `
+    <div class="event" data-type="${event.type}">${event.title}</div>
+    `).join('') : '<span class="info">No events for today</span>';
     return todaysEvents;
   }
 
   upcomingEventsHtml() {
     const upcomingEvents = this.dataStore.getUpcomingEvents(this.upcomingEventCount, this.year, this.month, this.today);
     
-    const upcomingEventsHtml = (upcomingEvents.length > 0) ? upcomingEvents.map(event => `<div class="event"><span>${event.date}: ${event.title}</span></div>`).join('') : '<span class="info">No events added</span>';
+    const upcomingEventsHtml = (upcomingEvents.length > 0) ? upcomingEvents.map(event => `<div class="event">${event.date}: ${event.title} <div data-type="${event.type}"></div></div>`).join('') : '<span class="info">No events added</span>';
     return upcomingEventsHtml;
   }
 
