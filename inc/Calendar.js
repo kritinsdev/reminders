@@ -1,15 +1,17 @@
 import { Event } from "./Event";
+import { DataStore } from "./DataStore";
 
 export class Calendar {
-  constructor(containerId, dataStore) {
-    this.dataStore = dataStore;
+  constructor(containerId) {
+    this.daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    this.monthsOfYear = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    this.dataStore = new DataStore();
     this.container = document.getElementById(containerId);
     this.prevMonthBtn = document.getElementById('prev-month-btn');
     this.nextMonthBtn = document.getElementById('next-month-btn');
     this.today = new Date();
     this.year = this.today.getUTCFullYear();
     this.month = this.today.getUTCMonth() + 1;
-    this.upcomingEventCount = 5;
 
     this.events();
   }
@@ -39,86 +41,43 @@ export class Calendar {
   }
 
   generateCalendar() {
-    const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const monthsOfYear = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-    const firstDay = new Date(Date.UTC(this.year, this.month - 1, 1)).getUTCDay();
-    const numDays = this.daysInMonth(this.year, this.month);
-    const monthData = this.dataStore && this.dataStore[this.year] && this.dataStore[this.year][this.month] ? this.dataStore[this.year][this.month] : null;
+    const calendarWrap = document.createElement('div');
+    calendarWrap.classList.add('calendar-wrap');
+  
+    calendarWrap.innerHTML = `
+      ${this.generateCalendarInfo()}
+      <div class="calendar-body">
+      </div>
+    `;
+  
+    this.container.innerHTML = '';
+    this.container.appendChild(calendarWrap);
+  
+    this.generateCalendarBody();
+  }
 
-    let calendarHtml = `
-        <div class="calendar-wrap">
-          <div class="calendar-info">
-            <div class='current-date'>
-              <span>${this.today.getDate()}</span>
-              <span>Friday</span>
-            </div>
-            <div class="events">
-              <div class="events-title">Today's reminders</div>
-              <div class="events-wrap">
-                ${this.todaysEventsHtml()}
-              </div>
-            </div>
-            <div class="events">
-              <div class="events-title">Upcoming events</div>
-              <div class="events-wrap">
-                ${this.upcomingEventsHtml()}
-              </div>
-            </div>
-            <div class="create-event" id="add-new-event">
-            Create new <i class="fi fi-sr-add"></i>
-            </div>
-          </div>
-          <div class="calendar-body">
-            <div class="months">
-                <span id="prev-month-btn"><i class="fi fi-sr-caret-left"></i></span>
-                <span>${monthsOfYear[this.month - 1]} ${this.year}</span>
-                <span id="next-month-btn"><i class="fi fi-sr-caret-right"></i></span>
-            </div>
-            <div class="weekdays">
-              ${daysOfWeek.map(day => `<div class="weekday">${day}</div>`).join('')}
-            </div>
-            <div class="days">
-      `;
-
-    // Add empty blocks for days before the first day of the month
-    for (let i = 0; i < firstDay; i++) {
-      calendarHtml += '<div class="day empty"></div>';
-    }
-
-    // Add blocks for each day of the month
-    for (let day = 1; day <= numDays; day++) {
-      const dayData = monthData ? monthData[day] : null;
-      const isTodayClass = (day === this.today.getDate() && this.month === this.today.getMonth() + 1 && this.year === this.today.getFullYear()) ? 'today' : '';
-
-      const tooltipHtml = dayData ? `
-        <div class="tooltip">
-          <h2>${dayData[0].title}</h2>
-          <p>${dayData[0].description}</p>
+  generateCalendarInfo() {
+      return `<div class="calendar-info">
+      <div class='current-date'>
+        <span>${this.today.getDate()}</span>
+        <span>${this.daysOfWeek[this.today.getDay()]}</span>
+      </div>
+      <div class="events">
+        <div class="events-title">Today's reminders</div>
+        <div class="events-wrap">
+          ${this.todaysEventsHtml()}
         </div>
-      ` : '';
-
-      calendarHtml += `
-        <div class="day${dayData ? ' has-data' : ''} ${isTodayClass}">
-          <div class="date">
-            ${day}
-            <div class="dots">
-            ${dayData && dayData.length > 0 ? dayData.map(item => `
-            <div data-type="${item.type}"></div>
-          `).join('') : ''}
-          </div>
-          </div>
-          ${tooltipHtml}
+      </div>
+      <div class="events">
+        <div class="events-title">Upcoming events</div>
+        <div class="events-wrap">
+          ${this.upcomingEventsHtml()}
         </div>
-      `;
-    }
-
-    const lastDay = new Date(this.year, this.month - 1, numDays).getDay();
-    for (let i = lastDay; i < 6; i++) {
-      calendarHtml += '<div class="day empty"></div>';
-    }
-    calendarHtml += `</div> </div> </div>`;
-
-    this.container.innerHTML = calendarHtml;
+      </div>
+      <div class="create-event" id="add-new-event">
+      Create new <i class="fi fi-sr-add"></i>
+      </div>
+    </div>`
   }
 
   generateEventForm() {
@@ -180,7 +139,7 @@ export class Calendar {
   }
 
   upcomingEventsHtml() {
-    const upcomingEvents = this.dataStore.getUpcomingEvents(this.upcomingEventCount, this.year, this.month, this.today);
+    const upcomingEvents = this.dataStore.getUpcomingEvents(5, this.year, this.month, this.today);
     
     const upcomingEventsHtml = (upcomingEvents.length > 0) ? upcomingEvents.map(event => `<div class="event">${event.date}: ${event.title} <div data-type="${event.type}"></div></div>`).join('') : '<span class="info">No events added</span>';
     return upcomingEventsHtml;
