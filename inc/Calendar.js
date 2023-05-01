@@ -45,19 +45,77 @@ export class Calendar {
     calendarWrap.classList.add('calendar-wrap');
   
     calendarWrap.innerHTML = `
-      ${this.generateCalendarInfo()}
-      <div class="calendar-body">
-      </div>
+      <div class="calendar-info"></div>
+      <div class="calendar-body"></div>
     `;
   
-    this.container.innerHTML = '';
     this.container.appendChild(calendarWrap);
   
+    this.generateCalendarInfo();
     this.generateCalendarBody();
   }
 
+  generateCalendarBody() {
+    const firstDay = new Date(Date.UTC(this.year, this.month - 1, 1)).getUTCDay();
+    const numDays = this.daysInMonth(this.year, this.month);
+    const monthData = this.dataStore.data && this.dataStore.data[this.year] && this.dataStore.data[this.year][this.month] ? this.dataStore.data[this.year][this.month] : null;
+
+    let calendarBodyHtml = `
+      <div class="switcher">
+          <span id="prev-month-btn"><i class="fi fi-sr-caret-left"></i></span>
+          <span class="months">${this.monthsOfYear[this.month - 1]} ${this.year}</span>
+          <span id="next-month-btn"><i class="fi fi-sr-caret-right"></i></span>
+      </div>
+      <div class="weekdays">
+        ${this.daysOfWeek.map(day => `<div class="weekday">${day}</div>`).join('')}
+      </div>
+      <div class="days">
+      `;
+
+    for (let i = 0; i < firstDay; i++) {
+      calendarBodyHtml += '<div class="day empty"></div>';
+    }
+
+    for (let day = 1; day <= numDays; day++) {
+      const dayData = monthData ? monthData[day] : null;
+      const isTodayClass = (day === this.today.getDate() && this.month === this.today.getMonth() + 1 && this.year === this.today.getFullYear()) ? 'today' : '';
+
+      const tooltipHtml = dayData ? ` 
+        <div class="tooltip">
+          <h2>${dayData[0].title}</h2>
+          <p>${dayData[0].description}</p>
+        </div>
+      ` : '';
+
+      calendarBodyHtml += `
+        <div class="day${dayData ? ' has-data' : ''} ${isTodayClass}">
+          <div class="date">
+            ${day}
+            <div class="dots">
+            ${dayData && dayData.length > 0 ? dayData.map(item => `
+            <div data-type="${item.type}"></div>
+          `).join('') : ''}
+          </div>
+          </div>
+          ${tooltipHtml}
+        </div>
+      `;
+    }
+
+    const lastDay = new Date(this.year, this.month - 1, numDays).getDay();
+    for (let i = lastDay; i < 6; i++) {
+      calendarBodyHtml += '<div class="day empty"></div>';
+    }
+    calendarBodyHtml += `</div></div>`;
+
+    const calendarBody = this.container.querySelector('.calendar-body');
+    calendarBody.innerHTML = calendarBodyHtml;
+  }
+
   generateCalendarInfo() {
-      return `<div class="calendar-info">
+      const calendarInfo = this.container.querySelector('.calendar-info');
+
+      calendarInfo.innerHTML = `
       <div class='current-date'>
         <span>${this.today.getDate()}</span>
         <span>${this.daysOfWeek[this.today.getDay()]}</span>
@@ -76,8 +134,7 @@ export class Calendar {
       </div>
       <div class="create-event" id="add-new-event">
       Create new <i class="fi fi-sr-add"></i>
-      </div>
-    </div>`
+      </div>`;
   }
 
   generateEventForm() {
@@ -124,7 +181,8 @@ export class Calendar {
     const event = new Event(eventDateObject, eventType, eventTitle, eventDescription, eventRepeat);
     this.dataStore.addEvent(event);
   
-    this.generateCalendar();
+    this.generateCalendarInfo();
+    this.generateCalendarBody();
     document.querySelector('.modal').remove();
     document.body.classList.remove('modal-open');
   }
@@ -188,11 +246,11 @@ export class Calendar {
 
   prevMonthHandler = () => {
     this.changeMonth(-1);
-    this.generateCalendar();
+    this.generateCalendarBody();
   }
 
   nextMonthHandler = () => {
     this.changeMonth(1);
-    this.generateCalendar();
+    this.generateCalendarBody();
   }
 }
