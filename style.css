@@ -4,17 +4,30 @@ body {
   display: flex;
   align-items: center;
   font-family: Verdana, sans-serif;
+  margin:0;
 }
 
 .modal-open {
   overflow: hidden;
 }
 
+.hidden {
+  display: none!important;
+}
+
+.title {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 16px;
+  font-size: 24px;
+  color:white;
+}
+
 #calendar {
   font-weight: 300;
   display: flex;
   align-items: center;
-  max-width: 900px;
+  max-width: 990px;
   margin: 0 auto;
   }
 
@@ -24,14 +37,47 @@ body {
 }
 
 .calendar-info {
-  flex:0 0 25%;
+  position: relative;
+  flex:0 0 30%;
   background-color: rgb(247, 176, 90);
   padding:16px;
   border-radius: 10px;
   box-shadow: rgba(0, 0, 0, 0.2) 0px 18px 50px -10px;
+}
+
+.calendar-info-wrap {
   display: flex;
   flex-direction: column;
   gap:16px;
+  height: 100%;
+}
+
+.calendar-all-events {
+  color:white;
+  display: flex;
+  flex-direction: column;
+  gap:16px;
+  overflow-y: auto;
+  max-height: 390px;
+}
+
+.calendar-info .swap {
+  position: absolute;
+  top:0;
+  right: 0;
+  background-color: rgb(244, 150, 36);
+  padding: 10px;
+  border-radius: 0 10px 0 10px;
+}
+
+.calendar-info .swap:hover {
+  cursor: pointer;
+}
+
+.calendar-info .swap i {
+  display: flex;
+  font-size: 18px;
+  color:white;
 }
 
 .current-date {
@@ -62,17 +108,17 @@ body {
   border-radius: 10px;
 }
 
-.events-wrap::-webkit-scrollbar {
+.events-wrap::-webkit-scrollbar, .calendar-all-events::-webkit-scrollbar {
   width: 12px;
   background-color: rgb(244, 150, 36);
   border-radius: 10px;
 }
 
-.events-wrap::-webkit-scrollbar-track {
+.events-wrap::-webkit-scrollbar-track, .calendar-all-events::-webkit-scrollbar-track {
   border-radius: 10px;
 }
 
-.events-wrap::-webkit-scrollbar-thumb {
+.events-wrap::-webkit-scrollbar-thumb, .calendar-all-events::-webkit-scrollbar-thumb {
   border-radius: 10px;
   -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.2); 
 }
@@ -315,8 +361,8 @@ body {
 
 [data-type]::after {
   content:"";
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   display: block;
   border-radius: 50%;
 }

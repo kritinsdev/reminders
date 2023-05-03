@@ -9,6 +9,7 @@ export class Calendar {
     this.container = document.getElementById(containerId);
     this.prevMonthBtn = document.getElementById('prev-month-btn');
     this.nextMonthBtn = document.getElementById('next-month-btn');
+    this.eventsBtn = document.querySelector('#swap');
     this.today = new Date();
     this.year = this.today.getUTCFullYear();
     this.month = this.today.getUTCMonth() + 1;
@@ -116,6 +117,8 @@ export class Calendar {
       const calendarInfo = this.container.querySelector('.calendar-info');
 
       calendarInfo.innerHTML = `
+      <div class='swap' id='swap'><i class="fi fi-sr-list"></i></div>
+      <div class='calendar-info-wrap' id="eventsInfo">
       <div class='current-date'>
         <span>${this.today.getDate()}</span>
         <span>${this.daysOfWeek[this.today.getDay()]}</span>
@@ -134,6 +137,13 @@ export class Calendar {
       </div>
       <div class="create-event" id="add-new-event">
       Create new <i class="fi fi-sr-add"></i>
+      </div>
+      </div>
+      <div class='hidden' id="eventsAll">
+        <span class='title'>All events</span>
+        <div class='calendar-all-events'>
+        ${this.allEventsHtml()}
+        </div>
       </div>`;
   }
 
@@ -203,6 +213,13 @@ export class Calendar {
     return upcomingEventsHtml;
   }
 
+  allEventsHtml() {
+    const upcomingEvents = this.dataStore.getUpcomingEvents(999, this.year, this.month, this.today);
+    
+    const upcomingEventsHtml = (upcomingEvents.length > 0) ? upcomingEvents.map(event => `<div class="event">${event.date}: ${event.title} <i data-id="${event.id}" class="fi fi-sr-trash"></i></div>`).join('') : '<span class="info">No events added</span>';
+    return upcomingEventsHtml;
+  }
+
   openAddEventModal() {
     const modal = document.createElement('div');
     modal.classList.add('modal');
@@ -241,6 +258,17 @@ export class Calendar {
       this.nextMonthHandler();
     } else if (target.closest('#add-new-event')) {
       this.openAddEventModal();
+    } else if (target.closest('#swap')) {
+      const allEvents = document.querySelector('#eventsAll');
+      const eventsInfo = document.querySelector('#eventsInfo');
+
+      if(allEvents.classList.contains('hidden')) {
+        allEvents.classList.remove('hidden');
+        eventsInfo.classList.add('hidden');
+      } else {
+        allEvents.classList.add('hidden');
+        eventsInfo.classList.remove('hidden');
+      }
     }
   }
 
