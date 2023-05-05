@@ -139,8 +139,8 @@ export class Calendar {
       Create new <i class="fi fi-sr-add"></i>
       </div>
       </div>
-      <div class='hidden' id="eventsAll">
-        <span class='title'>All events</span>
+      <div class='all-events hidden' id="eventsAll">
+        <span>All events</span>
         <div class='calendar-all-events'>
         ${this.allEventsHtml()}
         </div>
@@ -216,7 +216,7 @@ export class Calendar {
   allEventsHtml() {
     const upcomingEvents = this.dataStore.getUpcomingEvents(999, this.year, this.month, this.today);
     
-    const upcomingEventsHtml = (upcomingEvents.length > 0) ? upcomingEvents.map(event => `<div class="event">${event.date}: ${event.title} <i data-id="${event.id}" class="fi fi-sr-trash"></i></div>`).join('') : '<span class="info">No events added</span>';
+    const upcomingEventsHtml = (upcomingEvents.length > 0) ? upcomingEvents.map(event => `<div class="event">${event.date}: ${event.title} <i data-id="${event.id}" class="fi fi-sr-trash"></i></div>`).join('') : '<p class="info">No events added</p>';
     return upcomingEventsHtml;
   }
 

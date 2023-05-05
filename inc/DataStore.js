@@ -2,10 +2,10 @@ import { Event } from "./Event";
 
 export class DataStore {
   constructor() {
-    this.data = this.fetchData();
+    this.data = this.#fetchData();
   }
 
-  fetchData() {
+  #fetchData() {
     const storedData = localStorage.getItem('calendarData');
     return storedData ? JSON.parse(storedData) : {};
   }
@@ -84,14 +84,14 @@ export class DataStore {
     return upcomingEvents;
   }
 
-  _createEventForEveryMonth(event) {
+  _createEventForEveryMonth(event, parentId) {
     const startDate = new Date(event.date);
     const endDate = new Date(startDate.getFullYear() + 1, 11); // 11 is the index for December
   
     const newDate = new Date(startDate);
     while (newDate <= endDate) {
       if (newDate > startDate) { // Avoid duplicating the original event
-        const newEvent = new Event(newDate, event.type, event.title, event.description, 'no-repeat');
+        const newEvent = new Event(newDate, event.type, event.title, event.description, 'no-repeat', parentId);
         this.addEvent(newEvent);
       }
       newDate.setMonth(newDate.getMonth() + 1);
@@ -108,7 +108,7 @@ export class DataStore {
 
   _createEventForEveryYear(event, parentId) {
     const newDate = new Date(event.date);
-    for (let i = 1; i <= 5; i++) {
+    for (let i = 1; i <= 4; i++) {
       newDate.setFullYear(newDate.getFullYear() + 1);
       const newEvent = new Event(newDate, event.type, event.title, event.description, 'no-repeat', parentId);
       this.addEvent(newEvent);
